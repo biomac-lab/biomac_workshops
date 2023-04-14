@@ -8,8 +8,8 @@
 ## 0. packages ####
 
 # Data import and preparation
-# install.packages("remotes")
-# remotes::install_github("epiverse-trace/sivirep")
+install.packages("remotes")
+remotes::install_github("epiverse-trace/sivirep")
 library(sivirep)
 library(dplyr)
 library(lubridate)
@@ -45,6 +45,7 @@ for(y in years_to_analyze)
   }
 }
 
+### Cleaning ####
 data_Dengue <- data_Dengue %>%
   mutate(
     #Ages cleaning
@@ -80,7 +81,47 @@ data_Dengue$ANO_NOT <- year(data_Dengue$FEC_NOT)
 data_Dengue <-  subset(data_Dengue, !is.na(data_Dengue$COD_MUN_O))
 data_Dengue <-  subset(data_Dengue, !is.na(data_Dengue$COD_DPTO_O))
 
+#######
+
 # National incidence
 
-inc_COL <- incidence::incidence(data_Dengue$FEC_NOT, interval = "1 epiweek")
+inc_COL <- incidence::incidence(data_Dengue$FEC_NOT, interval = "1 month")
 plot(inc_COL)
+
+counts <- inc_COL$counts
+
+library(readr)
+write_rds(counts,"inc.rds")
+#################################################################################################
+
+
+
+
+
+
+setwd("~/GitHub/biomac_workshops/intro_tsa")
+inc <- readRDS("inc.rds")
+inc=as.numeric(inc)
+incts=ts(inc,frequency=12,start=c(2007,1))
+plot(incts)
+
+DCS=stl(incts,t.window=36,s.window=12)
+plot(DCS)
+
+inc1=log(inc+1)
+inc1ts=ts(inc1,frequency=12,start(2007,1))
+
+DCT1=stl(inc1ts,t.window=36,s.window=12)
+plot(DCT1)
+
+DECOMPOSE=DCT1[["time.series"]]
+TREND=exp(DECOMPOSE[,2])
+SEAS=exp(DECOMPOSE[,1])
+REM=exp(DECOMPOSE[,3])
+
+
+TT=TREND*SEAS*REM
+
+ii=exp(inc1ts)
+plot(TT,ii)
+
